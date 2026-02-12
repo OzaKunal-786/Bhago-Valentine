@@ -179,3 +179,9 @@ button:active {
         opacity: 0;
     }
 }
+
+/* Hidden 'No, I love you!' Text Styling */
+.hidden-no-love {
+    /* Most styling is inline in JS for dynamic config values, but this ensures it's subtle */
+    text-shadow: 0 0 1px rgba(0,0,0,0.1); /* Subtle shadow to make it barely visible */
+}
