@@ -1,0 +1,181 @@
+/* Basic global styles */
+body {
+    margin: 0;
+    font-family: 'Pangolin', cursive; /* Use Pangolin for general text */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(to right, var(--background-start, #ffafbd), var(--background-end, #ffc3a0));
+    color: var(--text-color, #ff4757);
+    overflow: hidden; /* Hide scrollbars if content overflows due to floating elements */
+    position: relative; /* For positioning floating elements */
+    transition: background 1s ease-in-out; /* Smooth transition for background change */
+}
+
+#app {
+    position: relative;
+    z-index: 10; /* Ensure content is above floating elements */
+    text-align: center;
+    padding: 20px;
+    max-width: 90%;
+    width: 400px; /* Fixed width for better control */
+    min-height: 250px; /* Ensure a minimum height for 'No' button to move */
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex; /* Use flexbox for vertical centering content */
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    transition: background 0.3s ease;
+}
+
+h1 {
+    font-family: 'Pacifico', cursive; /* Use Pacifico for titles */
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: var(--text-color, #ff4757);
+}
+
+p {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+    line-height: 1.4;
+}
+
+.btn-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 30px;
+    width: 100%; /* Make buttons take full width of container */
+    max-width: 250px; /* Limit button width */
+}
+
+button {
+    padding: 15px 25px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    background-color: var(--button-background, #ff6b6b);
+    color: white;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    text-decoration: none; /* In case we use anchor tags as buttons */
+    display: inline-block; /* For proper padding and sizing */
+    font-family: 'Pangolin', cursive;
+    width: 100%; /* Fill button container */
+    box-sizing: border-box; /* Include padding in width */
+}
+
+button:hover {
+    background-color: var(--button-hover, #ff8787);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Music Button Specific Styles */
+#music-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000; /* Ensure it's above everything else */
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    padding: 0; /* Override button padding */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: none; /* Ensure no border */
+    text-align: center;
+}
+
+#music-button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+
+/* Floating Emoji Animation */
+.floating-emoji {
+    position: absolute;
+    font-size: 2em;
+    opacity: 0;
+    animation: floatUp var(--float-duration) ease-in forwards;
+    pointer-events: none; /* Allows clicks to pass through emojis */
+    transform: translateX(var(--float-x)); /* Initial sideways movement */
+    z-index: 1; /* Keep them behind the main content */
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(100vh) translateX(var(--float-x)) scale(0.8);
+        opacity: 0;
+    }
+    20% {
+        opacity: 0.8;
+        transform: translateY(80vh) translateX(var(--float-x)) scale(1);
+    }
+    100% {
+        transform: translateY(-20vh) translateX(var(--float-x)) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Love Meter Button specific styling */
+#loveBtn {
+    position: relative; /* For absolute positioning of bounce effect */
+    transition: transform var(--bounce-speed, 0.5s) ease-out;
+}
+
+/* Celebration Styles */
+.celebration-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 3em;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.celebration-message {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+}
+
+.celebration-emojis {
+    font-size: 3em;
+    animation: bounce var(--bounce-speed, 0.5s) infinite alternate;
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-15px); }
+}
+
+/* Final Heart Explosion (not directly styled here, but JS will create these) */
+.explosion-heart {
+    position: absolute;
+    font-size: 1em;
+    animation: explode var(--float-duration) ease-out forwards;
+    pointer-events: none;
+    z-index: 20; /* Above all else */
+}
+
+@keyframes explode {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(var(--heart-explosion-size)) translate(var(--explode-x), var(--explode-y));
+        opacity: 0;
+    }
+}
