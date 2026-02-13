@@ -45,12 +45,11 @@ p {
 }
 
 .btn-container {
-    display: flex;
+    /* ...keep all existing styles... */
     flex-direction: column;
-    gap: 15px;
-    margin-top: 30px;
-    width: 100%; /* Make buttons take full width of container */
-    max-width: 250px; /* Limit button width */
+    align-items: center;
+    position: relative;
+    min-height: 140px;
 }
 
 button {
@@ -204,7 +203,7 @@ button:active {
     border-color: var(--button-background);
 }
 
-/* Mini-Game Area */
+/* Mini-Game Kisses */
 #mini-game-area {
     position: relative; /* Crucial for absolute positioning of kisses */
     width: calc(100% - 20px); /* Adjust for app padding */
