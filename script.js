@@ -273,25 +273,29 @@ function renderQuestion(index) {
     switch (questionData.type) {
         case 'yesNo':
             renderYesNoQuestion(questionData, btnContainer);
+            app.appendChild(btnContainer);
             break;
         case 'loveMeter':
             renderLoveMeterQuestion(questionData, btnContainer);
+            app.appendChild(btnContainer);
             break;
         case 'transformingChoice':
             renderTransformingChoiceQuestion(questionData, btnContainer);
+            app.appendChild(btnContainer);
             break;
         case 'decodeCipher':
             renderDecodeCipherQuestion(questionData, btnContainer);
+            app.appendChild(btnContainer);
             break;
         case 'miniGame':
+            app.appendChild(btnContainer);
             renderMiniGameQuestion(questionData, btnContainer);
             break;
         case 'finalYesNo':
             renderFinalYesNoQuestion(questionData, btnContainer);
+            app.appendChild(btnContainer);
             break;
     }
-
-    app.appendChild(btnContainer);
 }
 
 function renderYesNoQuestion(questionData, btnContainer) {
@@ -544,37 +548,42 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
 function renderMiniGameQuestion(questionData, btnContainer) {
     score = 0; // Reset score for the new game
 
-    // Create and append score display
+    // Create score display
     const scoreDisplay = document.createElement('p');
     scoreDisplay.id = 'game-score';
     scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
     scoreDisplay.style.marginBottom = '10px';
-    app.appendChild(scoreDisplay); // FIXED: Use appendChild
 
-    // Create and append timer display
+    // Create timer display
     const timerDisplay = document.createElement('p');
     timerDisplay.id = 'game-timer';
     timerDisplay.textContent = `Time: ${questionData.timeLimit}s`;
     timerDisplay.style.marginBottom = '10px';
-    app.appendChild(timerDisplay); // FIXED: Use appendChild
 
-    // Create and append game area
+    // Create game area
     const gameArea = document.createElement('div');
     gameArea.id = 'mini-game-area';
-    app.appendChild(gameArea); // FIXED: Use appendChild
 
+    // Insert score, timer, and game area BEFORE the btnContainer
+    // (btnContainer is already in app at this point)
+    app.insertBefore(scoreDisplay, btnContainer);
+    app.insertBefore(timerDisplay, btnContainer);
+    app.insertBefore(gameArea, btnContainer);
+
+    // Create start button inside btnContainer
     const startBtn = document.createElement('button');
     startBtn.textContent = 'Start Game!';
-    btnContainer.appendChild(startBtn); // This correctly adds to btnContainer
+    btnContainer.appendChild(startBtn);
 
     const initialGameMessage = document.createElement('p');
     initialGameMessage.textContent = "Click 'Start Game' to begin!";
     initialGameMessage.style.textAlign = 'center';
-    gameArea.appendChild(initialGameMessage); // Display instruction inside game area
+    gameArea.appendChild(initialGameMessage);
 
     startBtn.addEventListener('click', () => {
         startBtn.disabled = true;
-        initialGameMessage.remove(); // Remove instruction
+        startBtn.style.opacity = '0.5';
+        initialGameMessage.remove();
         score = 0;
         scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
 
@@ -583,14 +592,7 @@ function renderMiniGameQuestion(questionData, btnContainer) {
 
         kissGenerationIntervalId = setInterval(() => {
             createMovingKiss(gameArea, questionData);
-        }, questionData.kissGenerationInterval); // Use config interval
-
-        gameTimerId = setTimeout(() => {
-            clearInterval(kissGenerationIntervalId);
-            const finalScore = score;
-            const message = finalScore >= questionData.targetCount ? questionData.successMessage : questionData.failMessage;
-            displayTemporaryMessage(message, renderNextQuestion);
-        }, questionData.timeLimit * 1000);
+        }, questionData.kissGenerationInterval);
 
         // Update timer every second
         let countdownInterval = setInterval(() => {
@@ -600,6 +602,18 @@ function renderMiniGameQuestion(questionData, btnContainer) {
                 clearInterval(countdownInterval);
             }
         }, 1000);
+
+        gameTimerId = setTimeout(() => {
+            clearInterval(kissGenerationIntervalId);
+            clearInterval(countdownInterval);
+            const finalScore = score;
+            if (finalScore >= questionData.targetCount) {
+                displayTemporaryMessage(questionData.successMessage, renderNextQuestion);
+            } else {
+                // On fail, let them retry
+                displayTemporaryMessage(questionData.failMessage, () => renderQuestion(currentQuestionIndex));
+            }
+        }, questionData.timeLimit * 1000);
     });
 }
 
