@@ -689,8 +689,8 @@ function renderFinalYesNoQuestion(questionData, btnContainer) {
 
     noBtn.addEventListener('mouseover', handleNoButtonHover); // This will use the app-scoped bounce
     noBtn.addEventListener('click', () => {
-        // If they manage to click no, give a message then re-render
-        displayTemporaryMessage("Are you SURE? 😉 My heart can't take that!", () => renderFinalYesNoQuestion(questionData, btnContainer));
+        // If they manage to click no, give a message then re-render the whole question
+        displayTemporaryMessage("Are you SURE? 😉 My heart can't take that!", () => renderQuestion(currentQuestionIndex));
     });
 
 
