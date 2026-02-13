@@ -60,9 +60,9 @@ const config = {
             ],
             nextBtn: "Smart choice!"
         },
-        { // NEW QUESTION: Transforming Choices
+        { // NEW QUESTION: Transforming Choices (FIXED: removed config.valentineName from definition)
             type: 'transformingChoice',
-            text: `Alright, ${config.valentineName}, deep down, how would you describe me?`,
+            text: `Alright, [VALENTINE_NAME], deep down, how would you describe me?`, // Placeholder used here
             options: [
                 { initial: "Ugly", transformed: "Handsome! 🥰", response: "Aw, you're just saying what you truly feel! You're too kind!" },
                 { initial: "Annoying", transformed: "Charming! ✨", response: "Haha, I knew you loved my quirks! And now I know you find me charming!" },
@@ -90,7 +90,7 @@ const config = {
         },
         {
             type: 'miniGame', // NEW QUESTION
-            text: `Quick, ${config.valentineName}! Catch 5 flying kisses in 10 seconds! My heart depends on it!`,
+            text: `Quick, [VALENTINE_NAME]! Catch 5 flying kisses in 10 seconds! My heart depends on it!`, // Placeholder used here
             targetCount: 5,
             timeLimit: 10, // seconds
             emoji: '😘',
@@ -270,6 +270,7 @@ function clearApp() {
         oldNoBtn.style.zIndex = '';
         oldNoBtn.style.opacity = '';
         oldNoBtn.style.display = ''; // Clear display none potentially set
+        oldNoBtn.classList.remove('transformed'); // Ensure this class is removed
     }
     // Clear any game items from mini-game
     document.querySelectorAll('.moving-kiss').forEach(kiss => kiss.remove());
@@ -292,7 +293,8 @@ function renderQuestion(index) {
     }
 
     const p = document.createElement('p');
-    p.textContent = questionData.text;
+    // Replace placeholder for Valentine's Name in question text
+    p.textContent = questionData.text.replace('[VALENTINE_NAME]', config.valentineName);
 
     app.appendChild(h1);
     app.appendChild(p);
@@ -307,7 +309,7 @@ function renderQuestion(index) {
         case 'loveMeter':
             renderLoveMeterQuestion(questionData, btnContainer);
             break;
-        case 'animatedChoice': // NEW
+        case 'animatedChoice':
             renderAnimatedChoiceQuestion(questionData, btnContainer);
             break;
         case 'hiddenTextNo':
@@ -319,10 +321,10 @@ function renderQuestion(index) {
         case 'transformingChoice':
             renderTransformingChoiceQuestion(questionData, btnContainer);
             break;
-        case 'decodeCipher': // NEW
+        case 'decodeCipher':
             renderDecodeCipherQuestion(questionData, btnContainer);
             break;
-        case 'miniGame': // NEW
+        case 'miniGame':
             renderMiniGameQuestion(questionData, btnContainer);
             break;
         case 'finalYesNo':
