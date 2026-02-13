@@ -39,7 +39,7 @@ const config = {
                 { initial: "Clueless", transformed: "Brilliant! 💡", response: "Oh, you thought I was clueless? Plot twist: I'm brilliant! Thanks for noticing!" }
             ],
             activationEvent: 'mouseover', // NEW: Activate on mouseover
-            nextBtn: "You're too sweet! 😍"
+            nextBtn: "You're too sweet! 😍" // This will be the text on the "Continue" button after choice
         },
         {
             type: 'decodeCipher', // NEW QUESTION
@@ -49,7 +49,8 @@ const config = {
             hint: "Each letter is actually 3 letters *before* it in the alphabet!", // This is the Caesar cipher, shift by -3 to decode
             successMessage: "You cracked it! My brilliant, clever Valentine! 🥰",
             failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)",
-            skipBtnText: "Kiss Kunal Now to get the answer" // New skip button text
+            skipBtnText: "Kiss Kunal Now to get the answer", // New skip button text
+            skipDelay: 10000 // NEW: Delay in ms before skip button appears
         },
         {
             type: 'miniGame', // NEW QUESTION
@@ -58,7 +59,7 @@ const config = {
             timeLimit: 10, // seconds
             emoji: '😘',
             kissMoveDuration: '3s', // NEW: Duration for each kiss's movement
-            kissGenerationInterval: 500, // NEW: How often kisses appear (ms)
+            kissGenerationInterval: 700, // NEW: How often kisses appear (ms)
             successMessage: "You caught them all! My heart is yours! 💖",
             failMessage: "Oh no! You missed some! My kisses are too fast for you... Try again? 😉"
         },
@@ -161,7 +162,7 @@ function setupMusicPlayer() {
     musicButton.addEventListener('click', () => {
         if (isPlaying) {
             audio.pause();
-            musicButton.innerHTML = config.music.startText;
+            musicButton.innerHTML = config.music.stopText;
         } else {
             audio.play().catch(e => console.error("Music autoplay blocked or failed:", e));
             musicButton.innerHTML = config.music.stopText;
@@ -385,7 +386,7 @@ function renderLoveMeterQuestion(questionData, btnContainer) {
 // Renders the transforming choice question
 function renderTransformingChoiceQuestion(questionData, btnContainer) {
     const buttons = [];
-    let choiceMade = false; // Flag to ensure only one transformation/response
+    let choiceConfirmed = false; // NEW: Flag to track if a choice has been definitively made
 
     questionData.options.forEach(option => {
         const optionBtn = document.createElement('button');
@@ -393,26 +394,58 @@ function renderTransformingChoiceQuestion(questionData, btnContainer) {
         optionBtn.dataset.initialText = option.initial; // Store initial text
         optionBtn.dataset.transformedText = option.transformed; // Store transformed text
         optionBtn.dataset.responseText = option.response; // Store response text
+        optionBtn.classList.add('transforming-button'); // Add a class for potential styling or targeting
 
-        const handleInteraction = (event) => {
-            if (choiceMade) return; // Prevent interaction if a choice is already made
-
-            choiceMade = true; // Mark choice as made
+        const handleMouseover = (event) => {
+            if (choiceConfirmed) return; // If a choice is confirmed, do nothing
 
             event.target.textContent = event.target.dataset.transformedText; // Change button text
             event.target.style.backgroundColor = 'var(--text-color)'; // Highlight it
             event.target.style.transform = 'scale(1.05) translateY(-5px)'; // Little bounce
             event.target.style.transition = 'all 0.3s ease-out'; // Smooth transition
+            event.target.style.cursor = 'pointer'; // Keep pointer cursor
+        };
+
+        const handleMouseout = (event) => {
+            if (choiceConfirmed) return; // If a choice is confirmed, do nothing
+
+            event.target.textContent = event.target.dataset.initialText; // Reset text
+            event.target.style.backgroundColor = ''; // Reset background (CSS var will apply)
+            event.target.style.transform = ''; // Reset transform
+            event.target.style.transition = 'background-color 0.3s ease, transform 0.1s ease'; // Reset transition
+        };
+
+        const handleClick = (event) => {
+            if (choiceConfirmed) return; // Already confirmed, do nothing
+
+            choiceConfirmed = true; // Mark choice as confirmed
+
+            // Ensure the clicked button stays transformed and highlighted
+            event.target.textContent = event.target.dataset.transformedText;
+            event.target.style.backgroundColor = 'var(--text-color)';
+            event.target.style.transform = 'scale(1.05) translateY(-5px)';
+            event.target.style.transition = 'all 0.3s ease-out';
             event.target.style.cursor = 'default';
 
+            // Disable all other buttons
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                // Remove all event listeners from other buttons
+                btn.removeEventListener('mouseover', handleMouseover);
+                btn.removeEventListener('mouseout', handleMouseout);
+                btn.removeEventListener('click', handleClick);
+            });
+
+            // Display temporary message and then the "Continue" button
             displayTemporaryMessage(event.target.dataset.responseText, () => {
-                // After the response, show a "Next" button
-                clearApp(); // Clear the message
+                clearApp();
                 const h1 = document.createElement('h1');
                 h1.textContent = `${config.valentineName}! ❤️`;
                 app.appendChild(h1);
                 const nextMessage = document.createElement('p');
-                nextMessage.innerHTML = questionData.nextBtn; // Use innerHTML for potential emojis
+                nextMessage.innerHTML = questionData.nextBtn;
                 nextMessage.style.fontSize = '1.5em';
                 app.appendChild(nextMessage);
 
@@ -421,92 +454,18 @@ function renderTransformingChoiceQuestion(questionData, btnContainer) {
                 nextQuestionBtn.addEventListener('click', renderNextQuestion);
                 app.appendChild(nextQuestionBtn);
             });
-
-            // Disable all other buttons and remove their event listeners
-            buttons.forEach(btn => {
-                if (btn !== event.target) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                    // Remove the specific event listener based on activationEvent
-                    if (questionData.activationEvent === 'mouseover') {
-                        btn.removeEventListener('mouseover', handleInteraction);
-                        btn.removeEventListener('mouseout', handleReset); // Also remove mouseout
-                    } else { // Default to click
-                        btn.removeEventListener('click', handleInteraction);
-                    }
-                }
-            });
         };
 
-        const handleReset = (event) => {
-            if (choiceMade) return; // Don't reset if a choice has been made
-            event.target.textContent = event.target.dataset.initialText; // Reset text
-            event.target.style.backgroundColor = ''; // Reset background (CSS var will apply)
-            event.target.style.transform = ''; // Reset transform
-            event.target.style.transition = 'background-color 0.3s ease, transform 0.1s ease'; // Reset transition
-        };
-
-        if (questionData.activationEvent === 'mouseover') {
-            optionBtn.addEventListener('mouseover', handleInteraction);
-            optionBtn.addEventListener('mouseout', handleReset);
-            optionBtn.eventListenerReference = handleInteraction; // Store for later removal
-        } else { // Default to click
-            optionBtn.addEventListener('click', handleInteraction);
-            optionBtn.eventListenerReference = handleInteraction;
-        }
+        // Attach event listeners
+        optionBtn.addEventListener('mouseover', handleMouseover);
+        optionBtn.addEventListener('mouseout', handleMouseout);
+        optionBtn.addEventListener('click', handleClick); // Primary selection event
 
         buttons.push(optionBtn);
         btnContainer.appendChild(optionBtn);
     });
 }
 
-
-// Renders the question with a hidden "No, I love you!" text
-function renderHiddenTextNoQuestion(questionData, btnContainer) {
-    const yesBtn = document.createElement('button');
-    yesBtn.textContent = questionData.yesBtn;
-    yesBtn.id = 'yesBtn';
-    yesBtn.addEventListener('click', () => {
-        displayTemporaryMessage(`I knew you couldn't! 😉 ${config.valentineName}, you're the best!`, renderNextQuestion);
-    });
-
-    const noBtn = document.createElement('button');
-    noBtn.textContent = questionData.noBtn;
-    noBtn.id = 'noBtn';
-    noBtn.style.position = 'relative'; // Important for positioning hidden span inside
-
-    const hiddenSpan = document.createElement('span');
-    hiddenSpan.textContent = questionData.hiddenText;
-    hiddenSpan.classList.add('hidden-no-love'); // For styling in CSS
-    // Apply dynamic styling from config for maximum stealth
-    hiddenSpan.style.fontSize = questionData.hiddenTextSize;
-    hiddenSpan.style.opacity = questionData.hiddenTextOpacity;
-    hiddenSpan.style.color = questionData.hiddenTextColor;
-    hiddenSpan.style.position = 'absolute';
-    hiddenSpan.style.bottom = '5%'; // Position it subtly inside the button
-    hiddenSpan.style.left = '50%';
-    hiddenSpan.style.transform = 'translateX(-50%)';
-    hiddenSpan.style.width = 'fit-content';
-    hiddenSpan.style.whiteSpace = 'nowrap'; // Keep text on one line
-    hiddenSpan.style.pointerEvents = 'auto'; // Make it clickable (override button's pointer-events)
-    hiddenSpan.style.cursor = 'pointer'; // Show pointer on hover
-
-    hiddenSpan.addEventListener('click', (event) => {
-        event.stopPropagation(); // Prevent the parent button's click from firing
-        displayTemporaryMessage(questionData.successMessage, renderNextQuestion);
-    });
-
-    // If they click the main part of the NO button, give a hint
-    noBtn.addEventListener('click', () => {
-        displayTemporaryMessage(questionData.noAttemptMessage, () => renderQuestion(currentQuestionIndex));
-    });
-
-
-    noBtn.appendChild(hiddenSpan); // Put the hidden text inside the NO button
-    btnContainer.appendChild(yesBtn);
-    btnContainer.appendChild(noBtn);
-}
 
 // Renders the decode cipher question
 function renderDecodeCipherQuestion(questionData, btnContainer) {
@@ -535,7 +494,13 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
     const skipBtn = document.createElement('button'); // NEW: Skip button
     skipBtn.textContent = questionData.skipBtnText;
     skipBtn.style.marginTop = '10px';
+    skipBtn.style.display = 'none'; // Initially hidden
     btnContainer.appendChild(skipBtn);
+
+    // Make skip button appear after a delay
+    setTimeout(() => {
+        skipBtn.style.display = 'block';
+    }, questionData.skipDelay);
 
 
     checkBtn.addEventListener('click', () => {
@@ -551,8 +516,21 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
         displayTemporaryMessage(questionData.hint, () => renderQuestion(currentQuestionIndex)); // Show hint, then re-render question
     });
 
-    skipBtn.addEventListener('click', () => { // NEW: Skip button functionality
-        displayTemporaryMessage("Okay, Kunal gets a kiss! Now, let's move on. 😉", renderNextQuestion);
+    skipBtn.addEventListener('click', () => { // NEW: Skip button functionality with confirmation
+        displayTemporaryMessage("Did you really kiss Kunal? 😉", () => {
+            clearApp();
+            const pConfirm = document.createElement('p');
+            pConfirm.innerHTML = "Confirm your kiss! 🥰";
+            pConfirm.style.fontSize = '1.5em';
+            pConfirm.style.fontWeight = 'bold';
+            app.appendChild(pConfirm);
+
+            const confirmKissBtn = document.createElement('button');
+            confirmKissBtn.textContent = "Yes, I did! 💋";
+            confirmKissBtn.style.marginTop = '30px';
+            confirmKissBtn.addEventListener('click', renderNextQuestion);
+            app.appendChild(confirmKissBtn);
+        });
     });
 }
 

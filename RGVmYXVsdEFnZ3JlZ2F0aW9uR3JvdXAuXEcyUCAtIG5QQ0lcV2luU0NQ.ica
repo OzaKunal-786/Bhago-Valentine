@@ -43,43 +43,43 @@ Version=2
 VirtualCOMPortEmulation=On
 
 [ApplicationServers]
-SQL Developer - 2-1=
+WinSCP_1-1=
 
-[SQL Developer - 2-1]
-Address=;40;STA541135772;30823F5D9707AF62E2B8D98BACA7AC
+[WinSCP_1-1]
+Address=;40;STA541135772;2F9680B72CB2D69C24DAD2FFF74F85
 AutologonAllowed=ON
 BrowserProtocol=HTTPonTCP
 CGPSecurityTicket=On
-Citrix-TransactionId=0f627243-3a59-4ccc-868c-5528eb5bbb2f
-ClearPassword=EF4CBCC827F25E
+Citrix-TransactionId=123d6f7b-0e66-4d94-8a94-f8033606db6d
+ClearPassword=8BA7947C474959
 ClientAudio=On
 DesiredColor=8
 DesiredHRES=0
 DesiredVRES=0
-Domain=\65FD614ED13D14B0
+Domain=\C13D6DD35EBB20B6
 DoNotUseDefaultCSL=On
 FontSmoothingType=0
 HDXoverUDP=Preferred
 HTTPBrowserAddress=!
-InitialProgram=#SQL Developer - 2-1
+InitialProgram=#WinSCP_1-1
 Launcher=WI
-LaunchReference=11BEA447A56252AF9852EB169D44E6
+LaunchReference=23DBC17930AFCCAC37930287F86307
 LocHttpBrowserAddress=!
-LogonTicket=EF4CBCC827F25E65FD614ED13D14B0
+LogonTicket=8BA7947C474959C13D6DD35EBB20B6
 LogonTicketType=CTXS1
 LongCommandLine=
-LPWD=703
-NRWD=234
+LPWD=718
+NRWD=218
 ProxyTimeout=30000
 ProxyType=Auto
 SecureChannelProtocol=Detect
-SessionsharingKey=E92wkDPtJQJoSK1A0bLzL8WrVrOWeY71
+SessionsharingKey=bxs9Fk4WLX/ZXO48AemrHaYLGhM9tWar
 SFRAllowed=Off
 SSLCiphers=all
 SSLEnable=On
 SSLProxyHost=portal-brs.ica.p4s.svc.meshcore.net:443
-startSCD=1770975259656
-Title=SQL Developer
+startSCD=1770977185220
+Title=WinSCP
 TransportDriver=TCP/IP
 TRWD=0
 TWIMode=On

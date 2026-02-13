@@ -204,11 +204,11 @@ button:active {
     border-color: var(--button-background);
 }
 
-/* Mini-Game Kisses */
+/* Mini-Game Area */
 #mini-game-area {
     position: relative; /* Crucial for absolute positioning of kisses */
-    width: 100%; /* Take full width of parent */
-    height: 250px; /* Increased height for better game play */
+    width: calc(100% - 20px); /* Adjust for app padding */
+    height: 300px; /* Increased height for better game play */
     border: 2px dashed var(--text-color);
     border-radius: 10px;
     margin-bottom: 20px;
@@ -231,7 +231,7 @@ button:active {
     animation-duration: var(--kiss-move-duration); /* Dynamic duration from JS */
     animation-timing-function: ease-in-out; /* Smoother start/end */
     animation-fill-mode: forwards; /* Keep final state */
-    z-index: 5; /* Ensure kisses are above game area background */
+    z-index: 10; /* Ensure kisses are above game area background and clickable */
     pointer-events: auto; /* Make it clickable */
     transition: transform 0.1s ease-out; /* For click feedback */
 }
