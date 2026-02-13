@@ -50,16 +50,16 @@ const config = {
             successMessage: "You cracked it! My brilliant, clever Valentine! 🥰",
             failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)",
             skipBtnText: "Kiss Kunal Now to get the answer", // New skip button text
-            skipDelay: 10000 // NEW: Delay in ms before skip button appears (10 seconds)
+            skipDelay: 30000 // NEW: Delay in ms before skip button appears (10 seconds)
         },
-        {
-            type: 'miniGame', // NEW QUESTION
-            text: `Quick, [VALENTINE_NAME]! Catch 5 flying kisses in 10 seconds! My heart depends on it!`, // Placeholder used here
+         {
+            type: 'miniGame', // Q5: Catch the Kiss
+            text: `Quick, [VALENTINE_NAME]! Catch 5 flying kisses in 10 seconds! My heart depends on it!`,
             targetCount: 5,
             timeLimit: 10, // seconds
             emoji: '😘',
-            kissMoveDuration: '3s', // NEW: Duration for each kiss's movement
-            kissGenerationInterval: 700, // NEW: How often kisses appear (ms)
+            kissMoveDuration: '3s',
+            kissGenerationInterval: 700,
             successMessage: "You caught them all! My heart is yours! 💖",
             failMessage: "Oh no! You missed some! My kisses are too fast for you... Try again? 😉"
         },
@@ -252,11 +252,11 @@ function renderQuestion(index) {
     currentQuestionIndex = index;
     const questionData = config.questions[index];
 
-    // Adjust greeting based on question type for variety
     const h1 = document.createElement('h1');
-    if (currentQuestionIndex === 0) { // First question is special
+    // First question uses "Hey [ValentineName]!", subsequent ones use "[ValentineName]! ❤️"
+    if (currentQuestionIndex === 0) {
         h1.textContent = `Hey ${config.valentineName}!`;
-    } else { // Subsequent questions use a more direct greeting
+    } else {
         h1.textContent = `${config.valentineName}! ❤️`;
     }
 
@@ -386,7 +386,8 @@ function renderLoveMeterQuestion(questionData, btnContainer) {
 // Renders the transforming choice question
 function renderTransformingChoiceQuestion(questionData, btnContainer) {
     const buttons = [];
-    let choiceConfirmed = false; // NEW: Flag to track if a choice has been definitively made
+    let choiceConfirmed = false; // Flag to track if a choice has been definitively made
+
     const responseParagraph = document.createElement('p'); // New element for response text
     responseParagraph.style.marginTop = '20px';
     responseParagraph.style.minHeight = '1.2em'; // Ensure space even when empty
@@ -474,6 +475,7 @@ function renderTransformingChoiceQuestion(questionData, btnContainer) {
 
 
 // Renders the decode cipher question
+// Renders the decode cipher question
 function renderDecodeCipherQuestion(questionData, btnContainer) {
     const cipherDisplay = document.createElement('p');
     cipherDisplay.innerHTML = `Cipher: <code>${questionData.cipherText}</code>`;
@@ -523,24 +525,22 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
     });
 
     skipBtn.addEventListener('click', () => { // NEW: Skip button functionality with confirmation
-        displayTemporaryMessage("Did you really kiss Kunal? 😉", () => {
-            clearApp();
-            const pConfirm = document.createElement('p');
-            pConfirm.innerHTML = "Confirm your kiss! 🥰";
-            pConfirm.style.fontSize = '1.5em';
-            pConfirm.style.fontWeight = 'bold';
-            app.appendChild(pConfirm);
+        clearApp(); // Clear current question
+        const pConfirm = document.createElement('p');
+        pConfirm.innerHTML = "Did you really kiss Kunal? 😉";
+        pConfirm.style.fontSize = '1.5em';
+        pConfirm.style.fontWeight = 'bold';
+        app.appendChild(pConfirm);
 
-            const confirmKissBtn = document.createElement('button');
-            confirmKissBtn.textContent = "Yes, I did! 💋";
-            confirmKissBtn.style.marginTop = '30px';
-            confirmKissBtn.addEventListener('click', renderNextQuestion);
-            app.appendChild(confirmKissBtn);
-        });
+        const confirmKissBtn = document.createElement('button');
+        confirmKissBtn.textContent = "Yes, I did! 💋";
+        confirmKissBtn.style.marginTop = '30px';
+        confirmKissBtn.addEventListener('click', renderNextQuestion);
+        app.appendChild(confirmKissBtn);
     });
 }
 
-// NEW FUNCTION: Renders the mini-game question
+// Renders the mini-game question
 function renderMiniGameQuestion(questionData, btnContainer) {
     score = 0; // Reset score for the new game
     const gameArea = document.createElement('div');
@@ -565,6 +565,7 @@ function renderMiniGameQuestion(questionData, btnContainer) {
 
     const initialGameMessage = document.createElement('p');
     initialGameMessage.textContent = "Click 'Start Game' to begin!";
+    initialGameMessage.style.textAlign = 'center'; // Center the message
     gameArea.appendChild(initialGameMessage); // Display instruction inside game area
 
     startBtn.addEventListener('click', () => {
@@ -607,23 +608,21 @@ function createMovingKiss(gameArea, questionData) {
     kiss.style.setProperty('--kiss-move-duration', questionData.kissMoveDuration);
 
     // Random starting position within the game area
-    const startX = Math.random() * (gameArea.offsetWidth - 50); // Adjust for emoji size (approx)
-    const startY = gameArea.offsetHeight - 30; // Start from bottom of game area
+    const emojiSize = 50; // Approximate size of emoji in pixels for calculation
+    const startX = Math.random() * (gameArea.offsetWidth - emojiSize);
+    const startY = Math.random() * (gameArea.offsetHeight - emojiSize); // Start anywhere in gameArea
     kiss.style.left = `${startX}px`;
     kiss.style.top = `${startY}px`;
 
-    // Random intermediate point for more varied movement
-    const midX = Math.random() * (gameArea.offsetWidth - 50);
-    const midY = Math.random() * (gameArea.offsetHeight / 2); // Mid-point in top half
+    // Random end position (anywhere within the game area bounds, then slightly off-screen)
+    const endX = Math.random() * (gameArea.offsetWidth - emojiSize);
+    const endY = Math.random() * (gameArea.offsetHeight - emojiSize); // End point within game area
+    const finalOffScreenY = -emojiSize; // Guaranteed off-screen top
 
-    // Random end position (off screen top)
-    const endX = Math.random() * (gameArea.offsetWidth - 50);
-    const endY = -50; // Off the top of the game area
-
-    kiss.style.setProperty('--move-x', `${midX - startX}px`);
-    kiss.style.setProperty('--move-y', `${midY - startY}px`);
-    kiss.style.setProperty('--move-x-end', `${endX - startX}px`); // New custom property for end x
-    kiss.style.setProperty('--move-y-end', `${endY - startY}px`); // New custom property for end y
+    kiss.style.setProperty('--move-x', `${endX - startX}px`);
+    kiss.style.setProperty('--move-y', `${endY - startY}px`);
+    kiss.style.setProperty('--move-x-end', `${endX - startX + (Math.random() * 100 - 50)}px`); // Slightly randomize final X
+    kiss.style.setProperty('--move-y-end', `${finalOffScreenY - startY}px`); // Ensure it moves off top
 
     // Add click feedback and remove kiss
     kiss.addEventListener('click', (event) => {
@@ -643,7 +642,6 @@ function createMovingKiss(gameArea, questionData) {
         kiss.remove();
     });
 }
-
 
 function renderFinalYesNoQuestion(questionData, btnContainer) {
     const yesBtn = document.createElement('button');
