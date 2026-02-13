@@ -81,7 +81,7 @@ const config = {
     // Final Celebration
     celebration: {
         title: "Yay! I'm the luckiest person...",     // Celebration title
-        message: "Now come get your gift...",          // Celebration message
+        message: "Love you too...",          // Celebration message
         emojis: "🎁💖🤗💝💋❤️💕"                        // Celebration emojis
     },
 
@@ -672,19 +672,22 @@ function renderFinalYesNoQuestion(questionData, btnContainer) {
     noBtn.id = 'noBtn'; // Changed to 'noBtn' as it's the general ID for bouncy buttons
     // For the final 'No', we'll make it a little hard to click (only within app boundaries)
     // Re-using the bouncyNo logic from handleNoButtonHover/Click, but scoped to the app
-    noBtn.style.position = 'absolute';
-    noBtn.style.width = 'fit-content';
-    noBtn.style.minWidth = '100px';
+    noBtn.style.position = 'relative';
+    noBtn.style.width = '200px';
     noBtn.style.padding = '10px 20px';
     noBtn.style.fontSize = '1em';
     noBtn.style.zIndex = '100';
 
-    setTimeout(() => { // Initial positioning
-        const appRect = app.getBoundingClientRect();
-        const btnRect = noBtn.getBoundingClientRect();
-        noBtn.style.left = `${(appRect.width - btnRect.width) / 2}px`;
-        noBtn.style.top = `${appRect.height - btnRect.height - 20}px`;
-    }, 50);
+    yesBtn.style.width = '200px';
+
+    let firstHover = true;
+    const originalHover = noBtn.onmouseover;
+    noBtn.addEventListener('mouseover', () => {
+        if (firstHover) {
+            firstHover = false;
+            noBtn.style.position = 'absolute';
+        }
+    }, { once: false });
 
 
     noBtn.addEventListener('mouseover', handleNoButtonHover); // This will use the app-scoped bounce
