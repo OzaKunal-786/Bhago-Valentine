@@ -50,7 +50,7 @@ const config = {
             successMessage: "You cracked it! My brilliant, clever Valentine! 🥰",
             failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)",
             skipBtnText: "Kiss Kunal Now to get the answer", // New skip button text
-            skipDelay: 10000 // NEW: Delay in ms before skip button appears
+            skipDelay: 10000 // NEW: Delay in ms before skip button appears (10 seconds)
         },
         {
             type: 'miniGame', // NEW QUESTION
@@ -162,7 +162,7 @@ function setupMusicPlayer() {
     musicButton.addEventListener('click', () => {
         if (isPlaying) {
             audio.pause();
-            musicButton.innerHTML = config.music.stopText;
+            musicButton.innerHTML = config.music.startText;
         } else {
             audio.play().catch(e => console.error("Music autoplay blocked or failed:", e));
             musicButton.innerHTML = config.music.stopText;
@@ -387,6 +387,21 @@ function renderLoveMeterQuestion(questionData, btnContainer) {
 function renderTransformingChoiceQuestion(questionData, btnContainer) {
     const buttons = [];
     let choiceConfirmed = false; // NEW: Flag to track if a choice has been definitively made
+    const responseParagraph = document.createElement('p'); // New element for response text
+    responseParagraph.style.marginTop = '20px';
+    responseParagraph.style.minHeight = '1.2em'; // Ensure space even when empty
+    responseParagraph.style.fontWeight = 'bold';
+    app.appendChild(responseParagraph);
+
+    const continueBtnContainer = document.createElement('div'); // Container for the continue button
+    continueBtnContainer.className = 'btn-container'; // Reuse button container styling
+    const nextQuestionBtn = document.createElement('button');
+    nextQuestionBtn.textContent = 'Continue ❤️';
+    nextQuestionBtn.style.display = 'none'; // Initially hidden
+    nextQuestionBtn.addEventListener('click', renderNextQuestion);
+    continueBtnContainer.appendChild(nextQuestionBtn);
+    app.appendChild(continueBtnContainer);
+
 
     questionData.options.forEach(option => {
         const optionBtn = document.createElement('button');
@@ -427,33 +442,24 @@ function renderTransformingChoiceQuestion(questionData, btnContainer) {
             event.target.style.transition = 'all 0.3s ease-out';
             event.target.style.cursor = 'default';
 
-            // Disable all other buttons
+            // Display response message
+            responseParagraph.innerHTML = event.target.dataset.responseText;
+
+            // Disable all other buttons and remove their event listeners
             buttons.forEach(btn => {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor = 'not-allowed';
-                // Remove all event listeners from other buttons
-                btn.removeEventListener('mouseover', handleMouseover);
-                btn.removeEventListener('mouseout', handleMouseout);
-                btn.removeEventListener('click', handleClick);
+                if (btn !== event.target) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    // Remove all event listeners from other buttons
+                    btn.removeEventListener('mouseover', handleMouseover);
+                    btn.removeEventListener('mouseout', handleMouseout);
+                    btn.removeEventListener('click', handleClick);
+                }
             });
 
-            // Display temporary message and then the "Continue" button
-            displayTemporaryMessage(event.target.dataset.responseText, () => {
-                clearApp();
-                const h1 = document.createElement('h1');
-                h1.textContent = `${config.valentineName}! ❤️`;
-                app.appendChild(h1);
-                const nextMessage = document.createElement('p');
-                nextMessage.innerHTML = questionData.nextBtn;
-                nextMessage.style.fontSize = '1.5em';
-                app.appendChild(nextMessage);
-
-                const nextQuestionBtn = document.createElement('button');
-                nextQuestionBtn.textContent = 'Continue ❤️';
-                nextQuestionBtn.addEventListener('click', renderNextQuestion);
-                app.appendChild(nextQuestionBtn);
-            });
+            // Show the "Continue" button
+            nextQuestionBtn.style.display = 'block';
         };
 
         // Attach event listeners
@@ -539,7 +545,6 @@ function renderMiniGameQuestion(questionData, btnContainer) {
     score = 0; // Reset score for the new game
     const gameArea = document.createElement('div');
     gameArea.id = 'mini-game-area';
-    // Removed inline styles, keeping only those unique or not in CSS
     app.insertBefore(gameArea, btnContainer); // Insert game area above buttons
 
     const scoreDisplay = document.createElement('p');
@@ -558,11 +563,13 @@ function renderMiniGameQuestion(questionData, btnContainer) {
     startBtn.textContent = 'Start Game!';
     btnContainer.appendChild(startBtn);
 
-    gameArea.textContent = "Click 'Start Game' to begin!"; // Initial message in game area
+    const initialGameMessage = document.createElement('p');
+    initialGameMessage.textContent = "Click 'Start Game' to begin!";
+    gameArea.appendChild(initialGameMessage); // Display instruction inside game area
 
     startBtn.addEventListener('click', () => {
         startBtn.disabled = true;
-        gameArea.textContent = ''; // Clear initial message
+        initialGameMessage.remove(); // Remove instruction
         score = 0;
         scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
 
@@ -618,10 +625,15 @@ function createMovingKiss(gameArea, questionData) {
     kiss.style.setProperty('--move-x-end', `${endX - startX}px`); // New custom property for end x
     kiss.style.setProperty('--move-y-end', `${endY - startY}px`); // New custom property for end y
 
-    kiss.addEventListener('click', () => {
+    // Add click feedback and remove kiss
+    kiss.addEventListener('click', (event) => {
         score++;
         document.getElementById('game-score').textContent = `Caught: ${score}/${questionData.targetCount}`;
-        kiss.remove(); // Remove kiss when caught
+        // Brief scale down before removal for visual feedback
+        event.target.style.transform = 'scale(0.5)';
+        event.target.style.opacity = '0';
+        event.target.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+        setTimeout(() => event.target.remove(), 100); // Remove after quick animation
     });
 
     gameArea.appendChild(kiss);

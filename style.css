@@ -231,7 +231,7 @@ button:active {
     animation-duration: var(--kiss-move-duration); /* Dynamic duration from JS */
     animation-timing-function: ease-in-out; /* Smoother start/end */
     animation-fill-mode: forwards; /* Keep final state */
-    z-index: 10; /* Ensure kisses are above game area background and clickable */
+    z-index: 100; /* CRITICAL FIX: Ensure kisses are above everything else and clickable */
     pointer-events: auto; /* Make it clickable */
     transition: transform 0.1s ease-out; /* For click feedback */
 }
