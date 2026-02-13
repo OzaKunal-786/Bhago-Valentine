@@ -29,37 +29,6 @@ const config = {
             nextBtn: "Next ❤️",                         // Next button text
             loveThreshold: 150 // Percentage needed to show the next button
         },
-        {
-            type: 'animatedChoice', // NEW QUESTION
-            text: "Would you rather have a super-romantic dinner under the stars, or an epic pillow fight followed by cuddles?",
-            options: [
-                { text: "Dinner Under Stars ✨", visual: "🥂🌌💖", response: "Oh, how dreamy! I'll bring the champagne and bug spray! 😉" },
-                { text: "Epic Pillow Fight! ☁️", visual: "💥🤣🤗", response: "My kind of fight! Prepare to be covered in feathers and snuggles! (And maybe a few gentle boops!)" }
-            ],
-            visualDuration: 2500, // how long the visual animation stays
-            nextBtn: "My kind of person!"
-        },
-        {
-            type: 'hiddenTextNo', // NEW QUESTION TYPE
-            text: "Can you *really* say NO to being my Valentine? 😉",
-            yesBtn: "Yes!",
-            noBtn: "NO!",
-            hiddenText: "No, I love you! ❤️",
-            hiddenTextSize: "0.1em", // Very small
-            hiddenTextOpacity: "0.08", // Very faint
-            hiddenTextColor: "white", // Color of the hidden text
-            noAttemptMessage: "That's not the right 'No'! Keep looking... 🤔",
-            successMessage: "Aha! You found it! I knew you did! 🥰"
-        },
-        {
-            type: 'choice', // Humorous Choice Question
-            text: "Which superpower would you rather have for Valentine's Day?",
-            options: [
-                { text: "Instantly make anyone laugh uncontrollably (especially me!)", response: "Oh, you'd be my favorite comedian! And it's true, laughter is the best medicine... especially with you. 😂" },
-                { text: "Always find the perfect parking spot (for our dates!)", response: "A true hero! Think of all the stress-free adventures we'd have. My parking struggles would be a thing of the past! 🙏" }
-            ],
-            nextBtn: "Smart choice!"
-        },
         { // NEW QUESTION: Transforming Choices (FIXED: removed config.valentineName from definition)
             type: 'transformingChoice',
             text: `Alright, [VALENTINE_NAME], deep down, how would you describe me?`, // Placeholder used here
@@ -69,24 +38,18 @@ const config = {
                 { initial: "Irritating", transformed: "Captivating! 😉", response: "Irritating? Never! Captivating? Absolutely! Thanks for saying it!" },
                 { initial: "Clueless", transformed: "Brilliant! 💡", response: "Oh, you thought I was clueless? Plot twist: I'm brilliant! Thanks for noticing!" }
             ],
+            activationEvent: 'mouseover', // NEW: Activate on mouseover
             nextBtn: "You're too sweet! 😍"
         },
         {
             type: 'decodeCipher', // NEW QUESTION
             text: "I've sent you a secret love note, but it's encoded! Only your clever mind can unlock its true meaning. The key is in my heart...",
-            cipherText: "D FDWFKH HDBA LRYH! L ZDV RSHQLQJ PX FKRFRZHEVLWH.", // Shift +3 from original "A SWEETHEART LOVE! I WAS OPENING MY CHOCOWEBSITE."
-            correctAnswer: "A SWEETHEART LOVE! I WAS OPENING MY CHOCOWEBSITE.",
+            cipherText: "L ORYH NXQDO RCD, X DUH EHFW.", // New encoded text (Caesar cipher, shift +3)
+            correctAnswer: "I LOVE KUNAL OZA, U ARE BEST.", // New correct answer
             hint: "Each letter is actually 3 letters *before* it in the alphabet!", // This is the Caesar cipher, shift by -3 to decode
             successMessage: "You cracked it! My brilliant, clever Valentine! 🥰",
-            failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)"
-        },
-        {
-            type: 'yesNo',
-            text: "Am I cute when I'm grumpy?",
-            yesBtn: "Always!",
-            noBtn: "Be honest...",
-            yesResponse: "Aww, you get me! Even my grumpy face is loveable to you. 🥰",
-            noResponse: "Hey! Even my grumpy face has a certain charm... right? 😉"
+            failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)",
+            skipBtnText: "Kiss Kunal Now to get the answer" // New skip button text
         },
         {
             type: 'miniGame', // NEW QUESTION
@@ -94,6 +57,8 @@ const config = {
             targetCount: 5,
             timeLimit: 10, // seconds
             emoji: '😘',
+            kissMoveDuration: '3s', // NEW: Duration for each kiss's movement
+            kissGenerationInterval: 500, // NEW: How often kisses appear (ms)
             successMessage: "You caught them all! My heart is yours! 💖",
             failMessage: "Oh no! You missed some! My kisses are too fast for you... Try again? 😉"
         },
@@ -155,10 +120,10 @@ let noButtonClickCount = 0; // To track how many times the 'No' button is clicke
 let lovePercentage = 0; // To track love percentage for Q2
 let currentQuestionIndex = 0; // To keep track of which question we are on
 
-// --- Music Game Variables ---
+// --- Mini-Game Variables ---
 let score = 0;
-let gameTimer = null;
-let kissGenerationInterval = null;
+let gameTimerId = null; // Changed name to avoid confusion with built-in Timer object
+let kissGenerationIntervalId = null; // Changed name
 
 
 // --- Apply Configuration ---
@@ -274,9 +239,11 @@ function clearApp() {
     }
     // Clear any game items from mini-game
     document.querySelectorAll('.moving-kiss').forEach(kiss => kiss.remove());
-    // Stop any running timers for the mini-game
-    clearInterval(kissGenerationInterval);
-    clearTimeout(gameTimer);
+    // Stop any running intervals/timeouts for the mini-game
+    if (kissGenerationIntervalId) clearInterval(kissGenerationIntervalId);
+    if (gameTimerId) clearTimeout(gameTimerId);
+    kissGenerationIntervalId = null;
+    gameTimerId = null;
 }
 
 function renderQuestion(index) {
@@ -286,10 +253,10 @@ function renderQuestion(index) {
 
     // Adjust greeting based on question type for variety
     const h1 = document.createElement('h1');
-    if (questionData.type === 'loveMeter' || questionData.type === 'choice' || questionData.type === 'hiddenTextNo' || questionData.type === 'transformingChoice' || questionData.type === 'animatedChoice' || questionData.type === 'decodeCipher' || questionData.type === 'miniGame') {
-        h1.textContent = `${config.valentineName}! ❤️`;
-    } else {
+    if (currentQuestionIndex === 0) { // First question is special
         h1.textContent = `Hey ${config.valentineName}!`;
+    } else { // Subsequent questions use a more direct greeting
+        h1.textContent = `${config.valentineName}! ❤️`;
     }
 
     const p = document.createElement('p');
@@ -308,15 +275,6 @@ function renderQuestion(index) {
             break;
         case 'loveMeter':
             renderLoveMeterQuestion(questionData, btnContainer);
-            break;
-        case 'animatedChoice':
-            renderAnimatedChoiceQuestion(questionData, btnContainer);
-            break;
-        case 'hiddenTextNo':
-            renderHiddenTextNoQuestion(questionData, btnContainer);
-            break;
-        case 'choice':
-            renderChoiceQuestion(questionData, btnContainer);
             break;
         case 'transformingChoice':
             renderTransformingChoiceQuestion(questionData, btnContainer);
@@ -388,7 +346,7 @@ function renderYesNoQuestion(questionData, btnContainer) {
             noBtn.style.top = `${appRect.height - btnRect.height - 20}px`;
         }, 50);
 
-    } else { // For regular Yes/No questions (like "Am I cute...")
+    } else { // For regular Yes/No questions
         noBtn.addEventListener('click', () => {
             if (questionData.noResponse) {
                 displayTemporaryMessage(questionData.noResponse, renderNextQuestion);
@@ -424,56 +382,85 @@ function renderLoveMeterQuestion(questionData, btnContainer) {
     btnContainer.appendChild(nextBtn);
 }
 
-// NEW FUNCTION: Renders an animated choice question
-function renderAnimatedChoiceQuestion(questionData, btnContainer) {
-    const choicesMade = []; // To ensure only one choice is made
+// Renders the transforming choice question
+function renderTransformingChoiceQuestion(questionData, btnContainer) {
+    const buttons = [];
+    let choiceMade = false; // Flag to ensure only one transformation/response
+
     questionData.options.forEach(option => {
         const optionBtn = document.createElement('button');
-        optionBtn.textContent = option.text;
-        optionBtn.addEventListener('click', () => {
-            if (choicesMade.length > 0) return; // Prevent multiple clicks
+        optionBtn.textContent = option.initial;
+        optionBtn.dataset.initialText = option.initial; // Store initial text
+        optionBtn.dataset.transformedText = option.transformed; // Store transformed text
+        optionBtn.dataset.responseText = option.response; // Store response text
 
-            choicesMade.push(true); // Mark a choice as made
+        const handleInteraction = (event) => {
+            if (choiceMade) return; // Prevent interaction if a choice is already made
 
-            // Remove all other buttons immediately
-            btnContainer.innerHTML = '';
+            choiceMade = true; // Mark choice as made
 
-            // Display the animated visual
-            const visualDisplay = document.createElement('div');
-            visualDisplay.textContent = option.visual;
-            visualDisplay.style.fontSize = '3em';
-            visualDisplay.style.marginTop = '20px';
-            app.appendChild(visualDisplay);
+            event.target.textContent = event.target.dataset.transformedText; // Change button text
+            event.target.style.backgroundColor = 'var(--text-color)'; // Highlight it
+            event.target.style.transform = 'scale(1.05) translateY(-5px)'; // Little bounce
+            event.target.style.transition = 'all 0.3s ease-out'; // Smooth transition
+            event.target.style.cursor = 'default';
 
-            // After a short delay, display the response message
-            setTimeout(() => {
-                displayTemporaryMessage(option.response, renderNextQuestion);
-            }, questionData.visualDuration);
-        });
+            displayTemporaryMessage(event.target.dataset.responseText, () => {
+                // After the response, show a "Next" button
+                clearApp(); // Clear the message
+                const h1 = document.createElement('h1');
+                h1.textContent = `${config.valentineName}! ❤️`;
+                app.appendChild(h1);
+                const nextMessage = document.createElement('p');
+                nextMessage.innerHTML = questionData.nextBtn; // Use innerHTML for potential emojis
+                nextMessage.style.fontSize = '1.5em';
+                app.appendChild(nextMessage);
+
+                const nextQuestionBtn = document.createElement('button');
+                nextQuestionBtn.textContent = 'Continue ❤️';
+                nextQuestionBtn.addEventListener('click', renderNextQuestion);
+                app.appendChild(nextQuestionBtn);
+            });
+
+            // Disable all other buttons and remove their event listeners
+            buttons.forEach(btn => {
+                if (btn !== event.target) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    // Remove the specific event listener based on activationEvent
+                    if (questionData.activationEvent === 'mouseover') {
+                        btn.removeEventListener('mouseover', handleInteraction);
+                        btn.removeEventListener('mouseout', handleReset); // Also remove mouseout
+                    } else { // Default to click
+                        btn.removeEventListener('click', handleInteraction);
+                    }
+                }
+            });
+        };
+
+        const handleReset = (event) => {
+            if (choiceMade) return; // Don't reset if a choice has been made
+            event.target.textContent = event.target.dataset.initialText; // Reset text
+            event.target.style.backgroundColor = ''; // Reset background (CSS var will apply)
+            event.target.style.transform = ''; // Reset transform
+            event.target.style.transition = 'background-color 0.3s ease, transform 0.1s ease'; // Reset transition
+        };
+
+        if (questionData.activationEvent === 'mouseover') {
+            optionBtn.addEventListener('mouseover', handleInteraction);
+            optionBtn.addEventListener('mouseout', handleReset);
+            optionBtn.eventListenerReference = handleInteraction; // Store for later removal
+        } else { // Default to click
+            optionBtn.addEventListener('click', handleInteraction);
+            optionBtn.eventListenerReference = handleInteraction;
+        }
+
+        buttons.push(optionBtn);
         btnContainer.appendChild(optionBtn);
     });
 }
 
-
-function renderChoiceQuestion(questionData, btnContainer) {
-    questionData.options.forEach(option => {
-        const optionBtn = document.createElement('button');
-        optionBtn.textContent = option.text;
-        optionBtn.addEventListener('click', () => {
-            displayTemporaryMessage(option.response, renderNextQuestion);
-        });
-        btnContainer.appendChild(optionBtn);
-    });
-
-    // Add a general "Next" button if available in config
-    if (questionData.nextBtn) {
-        const nextBtn = document.createElement('button');
-        nextBtn.textContent = questionData.nextBtn;
-        nextBtn.style.marginTop = '15px'; // Give some space
-        nextBtn.addEventListener('click', renderNextQuestion);
-        btnContainer.appendChild(nextBtn);
-    }
-}
 
 // Renders the question with a hidden "No, I love you!" text
 function renderHiddenTextNoQuestion(questionData, btnContainer) {
@@ -521,57 +508,7 @@ function renderHiddenTextNoQuestion(questionData, btnContainer) {
     btnContainer.appendChild(noBtn);
 }
 
-// Renders the transforming choice question
-function renderTransformingChoiceQuestion(questionData, btnContainer) {
-    const buttons = [];
-    questionData.options.forEach(option => {
-        const optionBtn = document.createElement('button');
-        optionBtn.textContent = option.initial;
-        optionBtn.dataset.initialText = option.initial; // Store initial text
-        optionBtn.dataset.transformedText = option.transformed; // Store transformed text
-        optionBtn.dataset.responseText = option.response; // Store response text
-
-        optionBtn.addEventListener('click', (event) => {
-            event.target.textContent = event.target.dataset.transformedText; // Change button text
-            event.target.style.backgroundColor = 'var(--text-color)'; // Highlight it
-            event.target.style.transform = 'scale(1.05) translateY(-5px)'; // Little bounce
-            event.target.style.transition = 'all 0.3s ease-out'; // Smooth transition
-            event.target.style.cursor = 'default';
-
-            displayTemporaryMessage(event.target.dataset.responseText, () => {
-                // After the response, show a "Next" button
-                clearApp(); // Clear the message
-                const h1 = document.createElement('h1');
-                h1.textContent = `${config.valentineName}! ❤️`;
-                app.appendChild(h1);
-                const nextMessage = document.createElement('p');
-                nextMessage.innerHTML = questionData.nextBtn; // Use innerHTML for potential emojis
-                nextMessage.style.fontSize = '1.5em';
-                app.appendChild(nextMessage);
-
-                const nextQuestionBtn = document.createElement('button');
-                nextQuestionBtn.textContent = 'Continue ❤️';
-                nextQuestionBtn.addEventListener('click', renderNextQuestion);
-                app.appendChild(nextQuestionBtn);
-            });
-
-            // Disable all other buttons and remove their event listeners
-            buttons.forEach(btn => {
-                if (btn !== event.target) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                    btn.removeEventListener('click', btn.eventListenerReference); // Remove specific listener
-                }
-            });
-        });
-        optionBtn.eventListenerReference = optionBtn.addEventListener; // Store reference to remove later
-        buttons.push(optionBtn);
-        btnContainer.appendChild(optionBtn);
-    });
-}
-
-// NEW FUNCTION: Renders the decode cipher question
+// Renders the decode cipher question
 function renderDecodeCipherQuestion(questionData, btnContainer) {
     const cipherDisplay = document.createElement('p');
     cipherDisplay.innerHTML = `Cipher: <code>${questionData.cipherText}</code>`;
@@ -595,6 +532,12 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
     hintBtn.style.marginTop = '10px';
     btnContainer.appendChild(hintBtn);
 
+    const skipBtn = document.createElement('button'); // NEW: Skip button
+    skipBtn.textContent = questionData.skipBtnText;
+    skipBtn.style.marginTop = '10px';
+    btnContainer.appendChild(skipBtn);
+
+
     checkBtn.addEventListener('click', () => {
         const userAnswer = input.value.toUpperCase().trim(); // Convert to uppercase for comparison
         if (userAnswer === questionData.correctAnswer.toUpperCase().trim()) {
@@ -607,6 +550,10 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
     hintBtn.addEventListener('click', () => {
         displayTemporaryMessage(questionData.hint, () => renderQuestion(currentQuestionIndex)); // Show hint, then re-render question
     });
+
+    skipBtn.addEventListener('click', () => { // NEW: Skip button functionality
+        displayTemporaryMessage("Okay, Kunal gets a kiss! Now, let's move on. 😉", renderNextQuestion);
+    });
 }
 
 // NEW FUNCTION: Renders the mini-game question
@@ -614,14 +561,7 @@ function renderMiniGameQuestion(questionData, btnContainer) {
     score = 0; // Reset score for the new game
     const gameArea = document.createElement('div');
     gameArea.id = 'mini-game-area';
-    gameArea.style.position = 'relative';
-    gameArea.style.width = 'calc(100% - 20px)'; // Adjust for padding
-    gameArea.style.height = '200px'; // Fixed height for game area
-    gameArea.style.border = '2px dashed var(--text-color)';
-    gameArea.style.borderRadius = '10px';
-    gameArea.style.marginBottom = '20px';
-    gameArea.style.overflow = 'hidden';
-    gameArea.style.backgroundColor = 'rgba(255,255,255,0.7)'; // Slightly transparent background for game area
+    // Removed inline styles, keeping only those unique or not in CSS
     app.insertBefore(gameArea, btnContainer); // Insert game area above buttons
 
     const scoreDisplay = document.createElement('p');
@@ -640,21 +580,23 @@ function renderMiniGameQuestion(questionData, btnContainer) {
     startBtn.textContent = 'Start Game!';
     btnContainer.appendChild(startBtn);
 
+    gameArea.textContent = "Click 'Start Game' to begin!"; // Initial message in game area
+
     startBtn.addEventListener('click', () => {
         startBtn.disabled = true;
+        gameArea.textContent = ''; // Clear initial message
         score = 0;
         scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
-        gameArea.innerHTML = ''; // Clear any previous kisses
 
         let timeLeft = questionData.timeLimit;
         timerDisplay.textContent = `Time: ${timeLeft}s`;
 
-        kissGenerationInterval = setInterval(() => {
-            createMovingKiss(gameArea, questionData.emoji);
-        }, 500); // Generate a kiss every 0.5 seconds
+        kissGenerationIntervalId = setInterval(() => {
+            createMovingKiss(gameArea, questionData);
+        }, questionData.kissGenerationInterval); // Use config interval
 
-        gameTimer = setTimeout(() => {
-            clearInterval(kissGenerationInterval);
+        gameTimerId = setTimeout(() => {
+            clearInterval(kissGenerationIntervalId);
             const finalScore = score;
             const message = finalScore >= questionData.targetCount ? questionData.successMessage : questionData.failMessage;
             displayTemporaryMessage(message, renderNextQuestion);
@@ -671,33 +613,42 @@ function renderMiniGameQuestion(questionData, btnContainer) {
     });
 }
 
-function createMovingKiss(gameArea, emoji) {
+function createMovingKiss(gameArea, questionData) {
     const kiss = document.createElement('span');
     kiss.classList.add('moving-kiss');
-    kiss.textContent = emoji;
+    kiss.textContent = questionData.emoji;
+
+    // Set dynamic animation duration
+    kiss.style.setProperty('--kiss-move-duration', questionData.kissMoveDuration);
 
     // Random starting position within the game area
-    const startX = Math.random() * (gameArea.offsetWidth - 50); // Adjust for emoji size
+    const startX = Math.random() * (gameArea.offsetWidth - 50); // Adjust for emoji size (approx)
     const startY = gameArea.offsetHeight - 30; // Start from bottom of game area
     kiss.style.left = `${startX}px`;
     kiss.style.top = `${startY}px`;
 
-    // Random end position
+    // Random intermediate point for more varied movement
+    const midX = Math.random() * (gameArea.offsetWidth - 50);
+    const midY = Math.random() * (gameArea.offsetHeight / 2); // Mid-point in top half
+
+    // Random end position (off screen top)
     const endX = Math.random() * (gameArea.offsetWidth - 50);
     const endY = -50; // Off the top of the game area
 
-    kiss.style.setProperty('--move-x', `${endX - startX}px`);
-    kiss.style.setProperty('--move-y', `${endY - startY}px`);
+    kiss.style.setProperty('--move-x', `${midX - startX}px`);
+    kiss.style.setProperty('--move-y', `${midY - startY}px`);
+    kiss.style.setProperty('--move-x-end', `${endX - startX}px`); // New custom property for end x
+    kiss.style.setProperty('--move-y-end', `${endY - startY}px`); // New custom property for end y
 
     kiss.addEventListener('click', () => {
         score++;
-        document.getElementById('game-score').textContent = `Caught: ${score}/${config.questions[currentQuestionIndex].targetCount}`;
+        document.getElementById('game-score').textContent = `Caught: ${score}/${questionData.targetCount}`;
         kiss.remove(); // Remove kiss when caught
     });
 
     gameArea.appendChild(kiss);
 
-    // Remove kiss after its animation if not caught
+    // Remove kiss after its animation if not caught (important for performance)
     kiss.addEventListener('animationend', () => {
         kiss.remove();
     });
@@ -712,7 +663,7 @@ function renderFinalYesNoQuestion(questionData, btnContainer) {
 
     const noBtn = document.createElement('button');
     noBtn.textContent = questionData.noBtn;
-    noBtn.id = 'finalNoBtn';
+    noBtn.id = 'noBtn'; // Changed to 'noBtn' as it's the general ID for bouncy buttons
     // For the final 'No', we'll make it a little hard to click (only within app boundaries)
     // Re-using the bouncyNo logic from handleNoButtonHover/Click, but scoped to the app
     noBtn.style.position = 'absolute';

@@ -205,25 +205,47 @@ button:active {
 }
 
 /* Mini-Game Kisses */
+#mini-game-area {
+    position: relative; /* Crucial for absolute positioning of kisses */
+    width: 100%; /* Take full width of parent */
+    height: 250px; /* Increased height for better game play */
+    border: 2px dashed var(--text-color);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden; /* Keep kisses within bounds */
+    background-color: rgba(255,255,255,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em; /* For "Game Over" or instructions */
+    color: var(--text-color);
+    flex-shrink: 0; /* Prevent it from shrinking */
+}
+
 .moving-kiss {
-    position: absolute;
+    position: absolute; /* Absolute positioning within #mini-game-area */
     font-size: 2.5em;
     cursor: pointer;
-    animation: moveKiss 5s linear forwards; /* Kisses move for 5 seconds */
-    z-index: 5; /* Below app, above background emojis */
+    /* Animation definition - ensures consistent movement across browsers */
+    animation-name: moveKiss;
+    animation-duration: var(--kiss-move-duration); /* Dynamic duration from JS */
+    animation-timing-function: ease-in-out; /* Smoother start/end */
+    animation-fill-mode: forwards; /* Keep final state */
+    z-index: 5; /* Ensure kisses are above game area background */
     pointer-events: auto; /* Make it clickable */
+    transition: transform 0.1s ease-out; /* For click feedback */
 }
 
 @keyframes moveKiss {
     0% { transform: translate(0, 0) scale(1); opacity: 1; }
     50% { transform: translate(var(--move-x), var(--move-y)) scale(1.2); opacity: 0.9; }
-    100% { transform: translate(var(--move-x), var(--move-y)) scale(0.8); opacity: 0; }
+    100% { transform: translate(var(--move-x-end), var(--move-y-end)) scale(0.8); opacity: 0; }
 }
 
 .mini-game-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.8);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -233,4 +255,5 @@ button:active {
     z-index: 15; /* Above kisses, below buttons */
     pointer-events: none; /* Allow clicks to pass through */
     border-radius: 15px;
+    transition: opacity 0.3s ease;
 }
