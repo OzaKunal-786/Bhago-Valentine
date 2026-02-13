@@ -185,3 +185,52 @@ button:active {
     /* Most styling is inline in JS for dynamic config values, but this ensures it's subtle */
     text-shadow: 0 0 1px rgba(0,0,0,0.1); /* Subtle shadow to make it barely visible */
 }
+
+/* Cipher Input Styling */
+#cipher-input {
+    width: 80%;
+    padding: 10px;
+    margin-top: 15px;
+    border-radius: 8px;
+    border: 2px solid var(--text-color);
+    font-size: 1.1em;
+    text-align: center;
+    font-family: 'Pangolin', cursive;
+    color: var(--text-color);
+    background-color: rgba(255, 255, 255, 0.9);
+}
+#cipher-input:focus {
+    outline: none;
+    border-color: var(--button-background);
+}
+
+/* Mini-Game Kisses */
+.moving-kiss {
+    position: absolute;
+    font-size: 2.5em;
+    cursor: pointer;
+    animation: moveKiss 5s linear forwards; /* Kisses move for 5 seconds */
+    z-index: 5; /* Below app, above background emojis */
+    pointer-events: auto; /* Make it clickable */
+}
+
+@keyframes moveKiss {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    50% { transform: translate(var(--move-x), var(--move-y)) scale(1.2); opacity: 0.9; }
+    100% { transform: translate(var(--move-x), var(--move-y)) scale(0.8); opacity: 0; }
+}
+
+.mini-game-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--text-color);
+    z-index: 15; /* Above kisses, below buttons */
+    pointer-events: none; /* Allow clicks to pass through */
+    border-radius: 15px;
+}

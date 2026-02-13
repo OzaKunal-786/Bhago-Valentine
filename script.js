@@ -19,7 +19,7 @@ const config = {
             noBtn: "No",                               // No button text
             secretAnswer: "I don't like you, I love you! ❤️", // Hidden message for 'No'
             bouncyNo: true, // This question has a special bouncy 'No' button
-            uncatchableNo: true, // NEW: Makes the 'No' button jump all over the screen
+            uncatchableNo: true, // Makes the 'No' button jump all over the screen
             secretNoThreshold: 8 // How many 'No' clicks/hovers until secret answer
         },
         {
@@ -30,6 +30,16 @@ const config = {
             loveThreshold: 150 // Percentage needed to show the next button
         },
         {
+            type: 'animatedChoice', // NEW QUESTION
+            text: "Would you rather have a super-romantic dinner under the stars, or an epic pillow fight followed by cuddles?",
+            options: [
+                { text: "Dinner Under Stars ✨", visual: "🥂🌌💖", response: "Oh, how dreamy! I'll bring the champagne and bug spray! 😉" },
+                { text: "Epic Pillow Fight! ☁️", visual: "💥🤣🤗", response: "My kind of fight! Prepare to be covered in feathers and snuggles! (And maybe a few gentle boops!)" }
+            ],
+            visualDuration: 2500, // how long the visual animation stays
+            nextBtn: "My kind of person!"
+        },
+        {
             type: 'hiddenTextNo', // NEW QUESTION TYPE
             text: "Can you *really* say NO to being my Valentine? 😉",
             yesBtn: "Yes!",
@@ -37,18 +47,38 @@ const config = {
             hiddenText: "No, I love you! ❤️",
             hiddenTextSize: "0.1em", // Very small
             hiddenTextOpacity: "0.08", // Very faint
-            hiddenTextColor: "white",
+            hiddenTextColor: "white", // Color of the hidden text
             noAttemptMessage: "That's not the right 'No'! Keep looking... 🤔",
             successMessage: "Aha! You found it! I knew you did! 🥰"
         },
         {
-            type: 'choice', // NEW QUESTION
+            type: 'choice', // Humorous Choice Question
             text: "Which superpower would you rather have for Valentine's Day?",
             options: [
                 { text: "Instantly make anyone laugh uncontrollably (especially me!)", response: "Oh, you'd be my favorite comedian! And it's true, laughter is the best medicine... especially with you. 😂" },
                 { text: "Always find the perfect parking spot (for our dates!)", response: "A true hero! Think of all the stress-free adventures we'd have. My parking struggles would be a thing of the past! 🙏" }
             ],
             nextBtn: "Smart choice!"
+        },
+        { // NEW QUESTION: Transforming Choices
+            type: 'transformingChoice',
+            text: `Alright, ${config.valentineName}, deep down, how would you describe me?`,
+            options: [
+                { initial: "Ugly", transformed: "Handsome! 🥰", response: "Aw, you're just saying what you truly feel! You're too kind!" },
+                { initial: "Annoying", transformed: "Charming! ✨", response: "Haha, I knew you loved my quirks! And now I know you find me charming!" },
+                { initial: "Irritating", transformed: "Captivating! 😉", response: "Irritating? Never! Captivating? Absolutely! Thanks for saying it!" },
+                { initial: "Clueless", transformed: "Brilliant! 💡", response: "Oh, you thought I was clueless? Plot twist: I'm brilliant! Thanks for noticing!" }
+            ],
+            nextBtn: "You're too sweet! 😍"
+        },
+        {
+            type: 'decodeCipher', // NEW QUESTION
+            text: "I've sent you a secret love note, but it's encoded! Only your clever mind can unlock its true meaning. The key is in my heart...",
+            cipherText: "D FDWFKH HDBA LRYH! L ZDV RSHQLQJ PX FKRFRZHEVLWH.", // Shift +3 from original "A SWEETHEART LOVE! I WAS OPENING MY CHOCOWEBSITE."
+            correctAnswer: "A SWEETHEART LOVE! I WAS OPENING MY CHOCOWEBSITE.",
+            hint: "Each letter is actually 3 letters *before* it in the alphabet!", // This is the Caesar cipher, shift by -3 to decode
+            successMessage: "You cracked it! My brilliant, clever Valentine! 🥰",
+            failMessage: "Hmm, not quite! Keep trying, my clever one! (Or ask for a hint if you dare! 😉)"
         },
         {
             type: 'yesNo',
@@ -57,6 +87,15 @@ const config = {
             noBtn: "Be honest...",
             yesResponse: "Aww, you get me! Even my grumpy face is loveable to you. 🥰",
             noResponse: "Hey! Even my grumpy face has a certain charm... right? 😉"
+        },
+        {
+            type: 'miniGame', // NEW QUESTION
+            text: `Quick, ${config.valentineName}! Catch 5 flying kisses in 10 seconds! My heart depends on it!`,
+            targetCount: 5,
+            timeLimit: 10, // seconds
+            emoji: '😘',
+            successMessage: "You caught them all! My heart is yours! 💖",
+            failMessage: "Oh no! You missed some! My kisses are too fast for you... Try again? 😉"
         },
         {
             type: 'finalYesNo', // Special type for the final question
@@ -115,6 +154,12 @@ const documentTitle = document.querySelector('title');
 let noButtonClickCount = 0; // To track how many times the 'No' button is clicked for Q1
 let lovePercentage = 0; // To track love percentage for Q2
 let currentQuestionIndex = 0; // To keep track of which question we are on
+
+// --- Music Game Variables ---
+let score = 0;
+let gameTimer = null;
+let kissGenerationInterval = null;
+
 
 // --- Apply Configuration ---
 
@@ -210,15 +255,27 @@ function clearApp() {
     app.style.position = 'relative';
     app.style.left = 'auto';
     app.style.top = 'auto';
-    // Clear any inline styles left by bouncy buttons
-    if (document.getElementById('noBtn')) {
-        const noBtn = document.getElementById('noBtn');
-        noBtn.style.position = '';
-        noBtn.style.left = '';
-        noBtn.style.top = '';
-        noBtn.style.transform = '';
-        noBtn.style.transition = '';
+    // Clear any inline styles left by bouncy buttons (this is crucial!)
+    const oldNoBtn = document.getElementById('noBtn');
+    if (oldNoBtn) {
+        oldNoBtn.style.position = '';
+        oldNoBtn.style.left = '';
+        oldNoBtn.style.top = '';
+        oldNoBtn.style.transform = '';
+        oldNoBtn.style.transition = '';
+        oldNoBtn.style.width = '';
+        oldNoBtn.style.minWidth = '';
+        oldNoBtn.style.padding = '';
+        oldNoBtn.style.fontSize = '';
+        oldNoBtn.style.zIndex = '';
+        oldNoBtn.style.opacity = '';
+        oldNoBtn.style.display = ''; // Clear display none potentially set
     }
+    // Clear any game items from mini-game
+    document.querySelectorAll('.moving-kiss').forEach(kiss => kiss.remove());
+    // Stop any running timers for the mini-game
+    clearInterval(kissGenerationInterval);
+    clearTimeout(gameTimer);
 }
 
 function renderQuestion(index) {
@@ -228,12 +285,12 @@ function renderQuestion(index) {
 
     // Adjust greeting based on question type for variety
     const h1 = document.createElement('h1');
-    if (questionData.type === 'loveMeter' || questionData.type === 'choice' || questionData.type === 'hiddenTextNo' ) {
+    if (questionData.type === 'loveMeter' || questionData.type === 'choice' || questionData.type === 'hiddenTextNo' || questionData.type === 'transformingChoice' || questionData.type === 'animatedChoice' || questionData.type === 'decodeCipher' || questionData.type === 'miniGame') {
         h1.textContent = `${config.valentineName}! ❤️`;
     } else {
         h1.textContent = `Hey ${config.valentineName}!`;
     }
-    
+
     const p = document.createElement('p');
     p.textContent = questionData.text;
 
@@ -250,11 +307,23 @@ function renderQuestion(index) {
         case 'loveMeter':
             renderLoveMeterQuestion(questionData, btnContainer);
             break;
+        case 'animatedChoice': // NEW
+            renderAnimatedChoiceQuestion(questionData, btnContainer);
+            break;
+        case 'hiddenTextNo':
+            renderHiddenTextNoQuestion(questionData, btnContainer);
+            break;
         case 'choice':
             renderChoiceQuestion(questionData, btnContainer);
             break;
-        case 'hiddenTextNo': // NEW CASE
-            renderHiddenTextNoQuestion(questionData, btnContainer);
+        case 'transformingChoice':
+            renderTransformingChoiceQuestion(questionData, btnContainer);
+            break;
+        case 'decodeCipher': // NEW
+            renderDecodeCipherQuestion(questionData, btnContainer);
+            break;
+        case 'miniGame': // NEW
+            renderMiniGameQuestion(questionData, btnContainer);
             break;
         case 'finalYesNo':
             renderFinalYesNoQuestion(questionData, btnContainer);
@@ -280,27 +349,41 @@ function renderYesNoQuestion(questionData, btnContainer) {
     noBtn.textContent = questionData.noBtn;
     noBtn.id = 'noBtn';
 
-    if (questionData.bouncyNo) {
-        // For the uncatchable 'No' button on the first question, it needs to be positioned within the APP div
-        // but its movement will be relative to the entire window for more craziness.
-        // We set position absolute here, but update positions in handler.
-        noBtn.style.position = 'absolute';
-        noBtn.style.width = 'fit-content'; // Allow width to adjust to text if needed
-        noBtn.style.minWidth = '100px'; // Give it a minimum width
-        noBtn.style.padding = '10px 20px'; // Adjust padding for smaller size
-        noBtn.style.fontSize = '1em'; // Adjust font size
-        noBtn.style.zIndex = '100'; // Make sure it's on top of other buttons briefly
+    if (questionData.bouncyNo && questionData.uncatchableNo) { // Specific for the first question's uncatchable 'No'
+        noBtn.style.position = 'fixed'; // Position relative to viewport for full-screen jumps
+        noBtn.style.width = 'fit-content';
+        noBtn.style.minWidth = '100px';
+        noBtn.style.padding = '10px 20px';
+        noBtn.style.fontSize = '1em';
+        noBtn.style.zIndex = '100';
 
         noBtn.addEventListener('mouseover', handleNoButtonHover); // Mouseover for desktop
         noBtn.addEventListener('click', handleNoButtonClick); // Click for mobile/accessibility
         noBtn.addEventListener('touchstart', handleNoButtonHover); // Touch for mobile
 
-        // Initial positioning for the uncatchable button
+        // Initial positioning somewhere not too obvious but within view
         setTimeout(() => { // Give it a moment to render to get its true size
+            const btnRect = noBtn.getBoundingClientRect();
+            noBtn.style.left = `${Math.random() * (window.innerWidth - btnRect.width - 40) + 20}px`;
+            noBtn.style.top = `${Math.random() * (window.innerHeight - btnRect.height - 40) + 20}px`;
+        }, 50);
+
+    } else if (questionData.bouncyNo) { // For other bouncy 'No' buttons (like final question)
+        noBtn.style.position = 'absolute'; // Position relative to the #app container
+        noBtn.style.width = 'fit-content';
+        noBtn.style.minWidth = '100px';
+        noBtn.style.padding = '10px 20px';
+        noBtn.style.fontSize = '1em';
+        noBtn.style.zIndex = '100';
+
+        noBtn.addEventListener('mouseover', handleNoButtonHover);
+        noBtn.addEventListener('click', handleNoButtonClick);
+
+        setTimeout(() => { // Initial positioning inside app container
             const appRect = app.getBoundingClientRect();
             const btnRect = noBtn.getBoundingClientRect();
             noBtn.style.left = `${(appRect.width - btnRect.width) / 2}px`;
-            noBtn.style.top = `${appRect.height - btnRect.height - 20}px`; // Towards bottom of app
+            noBtn.style.top = `${appRect.height - btnRect.height - 20}px`;
         }, 50);
 
     } else { // For regular Yes/No questions (like "Am I cute...")
@@ -339,6 +422,37 @@ function renderLoveMeterQuestion(questionData, btnContainer) {
     btnContainer.appendChild(nextBtn);
 }
 
+// NEW FUNCTION: Renders an animated choice question
+function renderAnimatedChoiceQuestion(questionData, btnContainer) {
+    const choicesMade = []; // To ensure only one choice is made
+    questionData.options.forEach(option => {
+        const optionBtn = document.createElement('button');
+        optionBtn.textContent = option.text;
+        optionBtn.addEventListener('click', () => {
+            if (choicesMade.length > 0) return; // Prevent multiple clicks
+
+            choicesMade.push(true); // Mark a choice as made
+
+            // Remove all other buttons immediately
+            btnContainer.innerHTML = '';
+
+            // Display the animated visual
+            const visualDisplay = document.createElement('div');
+            visualDisplay.textContent = option.visual;
+            visualDisplay.style.fontSize = '3em';
+            visualDisplay.style.marginTop = '20px';
+            app.appendChild(visualDisplay);
+
+            // After a short delay, display the response message
+            setTimeout(() => {
+                displayTemporaryMessage(option.response, renderNextQuestion);
+            }, questionData.visualDuration);
+        });
+        btnContainer.appendChild(optionBtn);
+    });
+}
+
+
 function renderChoiceQuestion(questionData, btnContainer) {
     questionData.options.forEach(option => {
         const optionBtn = document.createElement('button');
@@ -359,7 +473,7 @@ function renderChoiceQuestion(questionData, btnContainer) {
     }
 }
 
-// NEW FUNCTION: Renders the question with a hidden "No, I love you!" text
+// Renders the question with a hidden "No, I love you!" text
 function renderHiddenTextNoQuestion(questionData, btnContainer) {
     const yesBtn = document.createElement('button');
     yesBtn.textContent = questionData.yesBtn;
@@ -405,6 +519,188 @@ function renderHiddenTextNoQuestion(questionData, btnContainer) {
     btnContainer.appendChild(noBtn);
 }
 
+// Renders the transforming choice question
+function renderTransformingChoiceQuestion(questionData, btnContainer) {
+    const buttons = [];
+    questionData.options.forEach(option => {
+        const optionBtn = document.createElement('button');
+        optionBtn.textContent = option.initial;
+        optionBtn.dataset.initialText = option.initial; // Store initial text
+        optionBtn.dataset.transformedText = option.transformed; // Store transformed text
+        optionBtn.dataset.responseText = option.response; // Store response text
+
+        optionBtn.addEventListener('click', (event) => {
+            event.target.textContent = event.target.dataset.transformedText; // Change button text
+            event.target.style.backgroundColor = 'var(--text-color)'; // Highlight it
+            event.target.style.transform = 'scale(1.05) translateY(-5px)'; // Little bounce
+            event.target.style.transition = 'all 0.3s ease-out'; // Smooth transition
+            event.target.style.cursor = 'default';
+
+            displayTemporaryMessage(event.target.dataset.responseText, () => {
+                // After the response, show a "Next" button
+                clearApp(); // Clear the message
+                const h1 = document.createElement('h1');
+                h1.textContent = `${config.valentineName}! ❤️`;
+                app.appendChild(h1);
+                const nextMessage = document.createElement('p');
+                nextMessage.innerHTML = questionData.nextBtn; // Use innerHTML for potential emojis
+                nextMessage.style.fontSize = '1.5em';
+                app.appendChild(nextMessage);
+
+                const nextQuestionBtn = document.createElement('button');
+                nextQuestionBtn.textContent = 'Continue ❤️';
+                nextQuestionBtn.addEventListener('click', renderNextQuestion);
+                app.appendChild(nextQuestionBtn);
+            });
+
+            // Disable all other buttons and remove their event listeners
+            buttons.forEach(btn => {
+                if (btn !== event.target) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.removeEventListener('click', btn.eventListenerReference); // Remove specific listener
+                }
+            });
+        });
+        optionBtn.eventListenerReference = optionBtn.addEventListener; // Store reference to remove later
+        buttons.push(optionBtn);
+        btnContainer.appendChild(optionBtn);
+    });
+}
+
+// NEW FUNCTION: Renders the decode cipher question
+function renderDecodeCipherQuestion(questionData, btnContainer) {
+    const cipherDisplay = document.createElement('p');
+    cipherDisplay.innerHTML = `Cipher: <code>${questionData.cipherText}</code>`;
+    cipherDisplay.style.fontFamily = 'monospace';
+    cipherDisplay.style.fontSize = '1.3em';
+    cipherDisplay.style.fontWeight = 'bold';
+    app.appendChild(cipherDisplay);
+
+    const input = document.createElement('input');
+    input.id = 'cipher-input';
+    input.type = 'text';
+    input.placeholder = 'Type your decoded message here...';
+    app.appendChild(input);
+
+    const checkBtn = document.createElement('button');
+    checkBtn.textContent = 'Decode!';
+    btnContainer.appendChild(checkBtn);
+
+    const hintBtn = document.createElement('button');
+    hintBtn.textContent = 'Need a hint?';
+    hintBtn.style.marginTop = '10px';
+    btnContainer.appendChild(hintBtn);
+
+    checkBtn.addEventListener('click', () => {
+        const userAnswer = input.value.toUpperCase().trim(); // Convert to uppercase for comparison
+        if (userAnswer === questionData.correctAnswer.toUpperCase().trim()) {
+            displayTemporaryMessage(questionData.successMessage, renderNextQuestion);
+        } else {
+            displayTemporaryMessage(questionData.failMessage, () => renderQuestion(currentQuestionIndex));
+        }
+    });
+
+    hintBtn.addEventListener('click', () => {
+        displayTemporaryMessage(questionData.hint, () => renderQuestion(currentQuestionIndex)); // Show hint, then re-render question
+    });
+}
+
+// NEW FUNCTION: Renders the mini-game question
+function renderMiniGameQuestion(questionData, btnContainer) {
+    score = 0; // Reset score for the new game
+    const gameArea = document.createElement('div');
+    gameArea.id = 'mini-game-area';
+    gameArea.style.position = 'relative';
+    gameArea.style.width = 'calc(100% - 20px)'; // Adjust for padding
+    gameArea.style.height = '200px'; // Fixed height for game area
+    gameArea.style.border = '2px dashed var(--text-color)';
+    gameArea.style.borderRadius = '10px';
+    gameArea.style.marginBottom = '20px';
+    gameArea.style.overflow = 'hidden';
+    gameArea.style.backgroundColor = 'rgba(255,255,255,0.7)'; // Slightly transparent background for game area
+    app.insertBefore(gameArea, btnContainer); // Insert game area above buttons
+
+    const scoreDisplay = document.createElement('p');
+    scoreDisplay.id = 'game-score';
+    scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
+    scoreDisplay.style.marginBottom = '10px';
+    app.insertBefore(scoreDisplay, gameArea);
+
+    const timerDisplay = document.createElement('p');
+    timerDisplay.id = 'game-timer';
+    timerDisplay.textContent = `Time: ${questionData.timeLimit}s`;
+    timerDisplay.style.marginBottom = '10px';
+    app.insertBefore(timerDisplay, scoreDisplay);
+
+    const startBtn = document.createElement('button');
+    startBtn.textContent = 'Start Game!';
+    btnContainer.appendChild(startBtn);
+
+    startBtn.addEventListener('click', () => {
+        startBtn.disabled = true;
+        score = 0;
+        scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
+        gameArea.innerHTML = ''; // Clear any previous kisses
+
+        let timeLeft = questionData.timeLimit;
+        timerDisplay.textContent = `Time: ${timeLeft}s`;
+
+        kissGenerationInterval = setInterval(() => {
+            createMovingKiss(gameArea, questionData.emoji);
+        }, 500); // Generate a kiss every 0.5 seconds
+
+        gameTimer = setTimeout(() => {
+            clearInterval(kissGenerationInterval);
+            const finalScore = score;
+            const message = finalScore >= questionData.targetCount ? questionData.successMessage : questionData.failMessage;
+            displayTemporaryMessage(message, renderNextQuestion);
+        }, questionData.timeLimit * 1000);
+
+        // Update timer every second
+        let countdownInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = `Time: ${timeLeft}s`;
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    });
+}
+
+function createMovingKiss(gameArea, emoji) {
+    const kiss = document.createElement('span');
+    kiss.classList.add('moving-kiss');
+    kiss.textContent = emoji;
+
+    // Random starting position within the game area
+    const startX = Math.random() * (gameArea.offsetWidth - 50); // Adjust for emoji size
+    const startY = gameArea.offsetHeight - 30; // Start from bottom of game area
+    kiss.style.left = `${startX}px`;
+    kiss.style.top = `${startY}px`;
+
+    // Random end position
+    const endX = Math.random() * (gameArea.offsetWidth - 50);
+    const endY = -50; // Off the top of the game area
+
+    kiss.style.setProperty('--move-x', `${endX - startX}px`);
+    kiss.style.setProperty('--move-y', `${endY - startY}px`);
+
+    kiss.addEventListener('click', () => {
+        score++;
+        document.getElementById('game-score').textContent = `Caught: ${score}/${config.questions[currentQuestionIndex].targetCount}`;
+        kiss.remove(); // Remove kiss when caught
+    });
+
+    gameArea.appendChild(kiss);
+
+    // Remove kiss after its animation if not caught
+    kiss.addEventListener('animationend', () => {
+        kiss.remove();
+    });
+}
+
 
 function renderFinalYesNoQuestion(questionData, btnContainer) {
     const yesBtn = document.createElement('button');
@@ -416,6 +712,7 @@ function renderFinalYesNoQuestion(questionData, btnContainer) {
     noBtn.textContent = questionData.noBtn;
     noBtn.id = 'finalNoBtn';
     // For the final 'No', we'll make it a little hard to click (only within app boundaries)
+    // Re-using the bouncyNo logic from handleNoButtonHover/Click, but scoped to the app
     noBtn.style.position = 'absolute';
     noBtn.style.width = 'fit-content';
     noBtn.style.minWidth = '100px';
@@ -431,22 +728,9 @@ function renderFinalYesNoQuestion(questionData, btnContainer) {
     }, 50);
 
 
-    noBtn.addEventListener('mouseover', () => {
-        const appRect = app.getBoundingClientRect();
-        const btnRect = noBtn.getBoundingClientRect();
-
-        // Calculate a new random position within the app's boundaries
-        const padding = 10;
-        const newX = padding + Math.random() * (appRect.width - btnRect.width - padding * 2);
-        const newY = padding + Math.random() * (appRect.height - btnRect.height - padding * 2);
-
-        noBtn.style.left = `${newX}px`;
-        noBtn.style.top = `${newY}px`;
-        noBtn.style.transform = 'translate(0,0)'; // Reset any previous transform
-        noBtn.style.transition = 'left 0.2s ease-out, top 0.2s ease-out';
-    });
+    noBtn.addEventListener('mouseover', handleNoButtonHover); // This will use the app-scoped bounce
     noBtn.addEventListener('click', () => {
-        // If they manage to click no, maybe a gentle nudge back to yes or just re-ask
+        // If they manage to click no, give a message then re-render
         displayTemporaryMessage("Are you SURE? 😉 My heart can't take that!", () => renderFinalYesNoQuestion(questionData, btnContainer));
     });
 
@@ -488,10 +772,13 @@ function displayTemporaryMessage(message, callback) {
 
 function handleNoButtonHover() {
     const questionData = config.questions[currentQuestionIndex];
+    const noBtn = document.getElementById('noBtn');
+
+    if (!noBtn || noBtn.classList.contains('transformed')) return; // If button already transformed or doesn't exist
+
     if (questionData.bouncyNo && questionData.uncatchableNo) { // Specific for the first question's uncatchable 'No'
         noButtonClickCount++;
 
-        const noBtn = document.getElementById('noBtn');
         const bodyRect = body.getBoundingClientRect(); // Get full window dimensions
         const btnRect = noBtn.getBoundingClientRect();
 
@@ -501,8 +788,6 @@ function handleNoButtonHover() {
         const newX = padding + Math.random() * (bodyRect.width - btnRect.width - padding * 2);
         const newY = padding + Math.random() * (bodyRect.height - btnRect.height - padding * 2);
 
-        // Apply position relative to the body (viewport), not the app container
-        noBtn.style.position = 'fixed'; // Use fixed to position relative to viewport
         noBtn.style.left = `${newX}px`;
         noBtn.style.top = `${newY}px`;
         noBtn.style.transform = `scale(${1 - noButtonClickCount * 0.02}) rotate(${Math.random() * 10 - 5}deg)`; // Shrink and rotate slightly
@@ -519,6 +804,7 @@ function handleNoButtonHover() {
                  noBtn.style.transform = 'scale(1) rotate(0deg)'; // Reset size/rotation
                  noBtn.style.width = 'auto'; // Let it grow to fit text
                  noBtn.style.transition = 'all 0.3s ease-out'; // Slower transition for final state
+                 noBtn.classList.add('transformed'); // Mark as transformed
 
                  // Remove event listeners, it's no longer evasive
                  noBtn.removeEventListener('mouseover', handleNoButtonHover);
@@ -528,20 +814,7 @@ function handleNoButtonHover() {
                  noBtn.addEventListener('click', () => displayTemporaryMessage("I knew it! 🥰", renderNextQuestion));
             }
         }
-    } else if (questionData.bouncyNo) { // Other bouncy 'No' buttons (like final question)
-        noButtonClickCount++;
-
-        const noBtn = document.getElementById('noBtn');
-        // If it's the very first time it's getting bounced, set its position properly relative to app
-        if (noBtn.style.position !== 'absolute') {
-            noBtn.style.position = 'absolute';
-            // Set initial position relative to current position, so it doesn't jump to (0,0)
-            const currentRect = noBtn.getBoundingClientRect();
-            const appRect = app.getBoundingClientRect();
-            noBtn.style.left = `${currentRect.left - appRect.left}px`;
-            noBtn.style.top = `${currentRect.top - appRect.top}px`;
-        }
-
+    } else if (questionData.bouncyNo) { // For other bouncy 'No' buttons (like final question)
         const appRect = app.getBoundingClientRect();
         const btnRect = noBtn.getBoundingClientRect();
 
@@ -559,15 +832,21 @@ function handleNoButtonHover() {
 
 function handleNoButtonClick() {
     const questionData = config.questions[currentQuestionIndex];
+    const noBtn = document.getElementById('noBtn');
+
+    if (!noBtn || noBtn.classList.contains('transformed')) return;
+
     if (questionData.bouncyNo && questionData.uncatchableNo) { // Specific for the first question
         // Trigger hover effect on click too, useful for touch devices
         handleNoButtonHover();
         // If the secret answer is revealed, allow it to act as a 'Yes'
-        if (noButtonClickCount >= questionData.secretNoThreshold && document.getElementById('noBtn').textContent === questionData.secretAnswer) {
+        if (noButtonClickCount >= questionData.secretNoThreshold && noBtn.textContent === questionData.secretAnswer) {
             displayTemporaryMessage("I knew it! 🥰", renderNextQuestion);
         }
     } else if (questionData.bouncyNo) { // Other bouncy 'No' buttons (like final question)
-        noButtonClickCount++; // Still count clicks for debugging if needed
+        // This is primarily for the final 'No' button, which also bounces but doesn't have a secret message.
+        // It's meant to be hard to click, but if clicked, it just re-renders the same question with a message.
+        // The event listener for this is handled in renderFinalYesNoQuestion.
         handleNoButtonHover(); // Also trigger hover behavior on click
     }
 }
