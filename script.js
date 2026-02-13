@@ -543,29 +543,33 @@ function renderDecodeCipherQuestion(questionData, btnContainer) {
 // Renders the mini-game question
 function renderMiniGameQuestion(questionData, btnContainer) {
     score = 0; // Reset score for the new game
-    const gameArea = document.createElement('div');
-    gameArea.id = 'mini-game-area';
-    app.insertBefore(gameArea, btnContainer); // Insert game area above buttons
 
+    // Create and append score display
     const scoreDisplay = document.createElement('p');
     scoreDisplay.id = 'game-score';
     scoreDisplay.textContent = `Caught: ${score}/${questionData.targetCount}`;
     scoreDisplay.style.marginBottom = '10px';
-    app.insertBefore(scoreDisplay, gameArea);
+    app.appendChild(scoreDisplay); // FIXED: Use appendChild
 
+    // Create and append timer display
     const timerDisplay = document.createElement('p');
     timerDisplay.id = 'game-timer';
     timerDisplay.textContent = `Time: ${questionData.timeLimit}s`;
     timerDisplay.style.marginBottom = '10px';
-    app.insertBefore(timerDisplay, scoreDisplay);
+    app.appendChild(timerDisplay); // FIXED: Use appendChild
+
+    // Create and append game area
+    const gameArea = document.createElement('div');
+    gameArea.id = 'mini-game-area';
+    app.appendChild(gameArea); // FIXED: Use appendChild
 
     const startBtn = document.createElement('button');
     startBtn.textContent = 'Start Game!';
-    btnContainer.appendChild(startBtn);
+    btnContainer.appendChild(startBtn); // This correctly adds to btnContainer
 
     const initialGameMessage = document.createElement('p');
     initialGameMessage.textContent = "Click 'Start Game' to begin!";
-    initialGameMessage.style.textAlign = 'center'; // Center the message
+    initialGameMessage.style.textAlign = 'center';
     gameArea.appendChild(initialGameMessage); // Display instruction inside game area
 
     startBtn.addEventListener('click', () => {
